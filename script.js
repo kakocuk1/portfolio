@@ -1,13 +1,3 @@
-// 0. ПРИНУДИТЕЛЬНЫЙ СКРОЛЛ НАВЕРХ ПРИ ЗАГРУЗКЕ
-window.addEventListener('load', () => {
-    window.scrollTo(0, 0);
-});
-
-if (window.location.hash) {
-    history.replaceState(null, null, window.location.pathname);
-}
-
-
 // 0.1 Прелоадер
 window.addEventListener('load', () => {
     const preloader = document.getElementById('preloader');
@@ -110,42 +100,59 @@ const terminalInput = document.getElementById('terminal-input');
 const terminalBody = document.getElementById('terminal-body');
 
 // Функция получения команд на текущем языке
-function getTerminalCommands() {
-    const lang = localStorage.getItem('lang') || 'ru';
+function getTerminalCommands(lang) {
     return {
-        'help': translations[lang].cmd_help,
         'go version': translations[lang].cmd_go_version,
         'ls': translations[lang].cmd_ls,
         'whoami': translations[lang].cmd_whoami,
-        'contact': translations[lang].cmd_contact,
-        'clear': 'CLEAR'
+        'contact': translations[lang].cmd_contact
     };
 }
 
 terminalInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        const cmd = terminalInput.value.trim().toLowerCase();
-        const commands = getTerminalCommands();
+        const input = terminalInput.value;
+        const cmd = input.trim().toLowerCase();
         const lang = localStorage.getItem('lang') || 'ru';
-        
+        const commands = getTerminalCommands(lang);
+
         const cmdLine = document.createElement('div');
         cmdLine.className = 'terminal-line';
-        cmdLine.innerHTML = `<span class="terminal-prompt">thebrickvitalik@portfolio:~$</span> <span class="terminal-text">${terminalInput.value}</span>`;
+        const prompt = document.createElement('span');
+        prompt.className = 'terminal-prompt';
+        prompt.textContent = 'thebrickvitalik@portfolio:~$';
+        const commandText = document.createElement('span');
+        commandText.className = 'terminal-text';
+        commandText.textContent = input;
+        cmdLine.append(prompt, ' ', commandText);
         terminalBody.appendChild(cmdLine);
-        
+
         if (cmd === 'clear') {
-            terminalBody.innerHTML = '';
-        } else if (commands[cmd]) {
+            terminalBody.replaceChildren();
+        } else if (cmd !== '') {
             const responseLine = document.createElement('div');
             responseLine.className = 'terminal-line';
-            responseLine.innerHTML = `<span class="terminal-text">${commands[cmd]}</span>`;
+            const response = document.createElement('span');
+            response.className = 'terminal-text';
+
+            if (cmd === 'help') {
+                const help = translations[lang].cmd_help;
+                response.textContent = help.title;
+                for (const [command, description] of Object.entries(help.commands)) {
+                    const name = document.createElement('span');
+                    name.className = 'terminal-command';
+                    name.textContent = command;
+                    response.append(document.createElement('br'), ' - ', name, ': ', description);
+                }
+            } else if (Object.hasOwn(commands, cmd)) {
+                response.textContent = commands[cmd];
+            } else {
+                response.classList.add('terminal-error');
+                response.textContent = translations[lang].cmd_not_found.replace('{cmd}', () => input);
+            }
+
+            responseLine.appendChild(response);
             terminalBody.appendChild(responseLine);
-        } else if (cmd !== '') {
-            const errorLine = document.createElement('div');
-            errorLine.className = 'terminal-line';
-            const errorMsg = translations[lang].cmd_not_found.replace('{cmd}', terminalInput.value);
-            errorLine.innerHTML = `<span class="terminal-text" style="color:#ff5f56">${errorMsg}</span>`;
-            terminalBody.appendChild(errorLine);
         }
         
         terminalInput.value = '';
@@ -340,7 +347,16 @@ const translations = {
         contacts_telegram: "Telegram",
         footer_text: "© 2026 TheBrickVitalik. Backend & Full Stack Developer (Go). Создано с вниманием к деталям.",
         scroll_top: "Наверх",
-        cmd_help: "Доступные команды: <br> - <span style='color:#27c93f'>go version</span>: показать версию Go<br> - <span style='color:#27c93f'>ls</span>: список проектов<br> - <span style='color:#27c93f'>whoami</span>: информация обо мне<br> - <span style='color:#27c93f'>clear</span>: очистить терминал<br> - <span style='color:#27c93f'>contact</span>: мои контакты",
+        cmd_help: {
+            title: "Доступные команды:",
+            commands: {
+                "go version": "показать версию Go",
+                ls: "список проектов",
+                whoami: "информация обо мне",
+                clear: "очистить терминал",
+                contact: "мои контакты"
+            }
+        },
         cmd_go_version: "go version go1.22.0 linux/amd64",
         cmd_ls: "resale-platform/  task-manager/  report-service/  english-teacher-bot/",
         cmd_whoami: "Виталий (TheBrickVitalik). Backend & Full Stack Developer. 9+ лет в инженерии, увлечен созданием надежных распределенных систем и полноценных веб-приложений.",
@@ -435,7 +451,16 @@ const translations = {
         contacts_telegram: "Telegram",
         footer_text: "© 2026 TheBrickVitalik. Backend & Full Stack Developer (Go). Crafted with attention to detail.",
         scroll_top: "Top",
-        cmd_help: "Available commands: <br> - <span style='color:#27c93f'>go version</span>: show Go version<br> - <span style='color:#27c93f'>ls</span>: list projects<br> - <span style='color:#27c93f'>whoami</span>: info about me<br> - <span style='color:#27c93f'>clear</span>: clear terminal<br> - <span style='color:#27c93f'>contact</span>: my contacts",
+        cmd_help: {
+            title: "Available commands:",
+            commands: {
+                "go version": "show Go version",
+                ls: "list projects",
+                whoami: "info about me",
+                clear: "clear terminal",
+                contact: "my contacts"
+            }
+        },
         cmd_go_version: "go version go1.22.0 linux/amd64",
         cmd_ls: "resale-platform/  task-manager/  report-service/  english-teacher-bot/",
         cmd_whoami: "Vitaliy (TheBrickVitalik). Backend & Full Stack Developer. 9+ years in engineering, passionate about building reliable distributed systems and full-featured web applications.",
